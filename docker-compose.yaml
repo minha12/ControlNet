@@ -1,0 +1,34 @@
+version: '3'
+
+services:
+  controlnet:
+    image: controlnet:latest
+    user: root
+    ports:
+      - "6006:6006"  # Add this line
+    volumes:
+      - /usr/local/share/ca-certificates/verdi.crt:/usr/local/share/ca-certificates/verdi.crt
+      - ./entrypoint.sh:/entrypoint.sh
+      - ../ControlNet:/app/ControlNet
+    environment:
+      - HTTP_PROXY=https://10.253.254.250:3130/
+      - HTTPS_PROXY=https://10.253.254.250:3130/
+      - http_proxy=https://10.253.254.250:3130/
+      - https_proxy=https://10.253.254.250:3130/
+      - REQUESTS_CA_BUNDLE=/usr/local/share/ca-certificates/verdi.crt
+      - CUDA_VISIBLE_DEVICES=0,1,2,3
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    # Add these important networking configs
+    network_mode: "host"  # This is crucial for NCCL communication
+    ipc: host  # Required for proper shared memory access
+    ulimits:  # Add proper system limits
+      memlock: -1
+      stack: 67108864
+    shm_size: '64gb'  # Adjust based on your needs
